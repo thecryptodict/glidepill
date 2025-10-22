@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Cap PFP Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        #pfp-container {
+            border: 2px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        button, input[type="file"] {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        #upload-btn, #download-btn {
+            background-color: #007bff;
+            color: white;
+        }
+        #upload-btn:hover, #download-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>PFP Generator: Mint Green Cap</h1>
+
+    <div class="controls">
+        <input type="file" id="upload-pfp" accept="image/*" style="display: none;">
+        <button id="upload-btn" onclick="document.getElementById('upload-pfp').click()">Upload Your PFP</button>
+        <button id="download-btn">Download Final PFP</button>
+    </div>
+
+    <div id="pfp-container">
+        <canvas id="pfp-canvas" width="400" height="400" style="border: 1px solid #000;"></canvas>
+    </div>
+
+    <p>
+        **Instructions:**
+        1. Click "Upload Your PFP" and select an image.
+        2. Use the controls (dots) on the cap to **drag, rotate, and scale** it to fit your image.
+        3. Click "Download Final PFP".
+    </p>
+
+    <script>
+        // Initialize Fabric.js Canvas
+        const canvas = new fabric.Canvas('pfp-canvas');
+        const CANVAS_SIZE = 400; // Define a standard size for the canvas
+
+        // --- IMAGE ASSETS (SVG Paths) ---
+
+        // The Bat Symbol (simple V-shape)
+        const batPath = 'M 0,0 L 50,50 L 100,0 L 75,0 L 50,25 L 25,0 Z'; 
+
+        // The Cap Shape (simple arc/hat shape)
+        const capPath = 'M 0,50 C 0,0 100,0 100,50 L 80,50 L 80,60 L 20,60 L 20,50 Z'; 
+
+        // --- FUNCTIONS ---
+
+        function addCapAndLogo() {
+            // 1. Add the Mint Green Cap
+            const cap = new fabric.Path(capPath, {
+                fill: '#98FB98', // Mint Green
+                scaleX: 3,
+                scaleY: 2,
+                top: 100,
+                left: 100,
+                originX: 'center',
+                originY: 'center',
+                selectable: true,
+                hasControls: true,
+                name: 'cap'
+            });
+
+            // 2. Add the Black Bat Logo
+            const logo = new fabric.Path(batPath, {
+                fill: 'black', 
+                scaleX: 1.5,
+                scaleY: 1.5,
+                top: 120, // Slightly lower than cap
+                left: 150,
+                originX: 'center',
+                originY: 'center',
+                selectable: true,
+                hasControls: true,
+                name: 'logo'
+            });
+
+            // Group them so they move together initially
+            const group = new fabric.Group([cap, logo], {
+                left: CANVAS_SIZE / 2,
+                top: CANVAS_SIZE / 2,
+                originX: 'center',
+                originY: 'center',
+                hasControls: true,
+                lockScalingFlip: true, // Prevent flipping
+                name: 'cap_group'
+            });
+
+            canvas.add(group);
+            canvas.setActiveObject(group); // Select the group immediately for user interaction
+            canvas.renderAll();
+        }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(f) {
+                const data = f.target.result;
+                fabric.Image.fromURL(data, function(img) {
+                    
+                    // Remove any previous background image
+                    canvas.getObjects().filter(obj => obj.name === 'pfp_background').forEach(obj => canvas.remove(obj));
+
+                    // Scale the uploaded image to fit the canvas and center it
+                    img.scaleToWidth(CANVAS_SIZE);
+                    if (img.getScaledHeight() > CANVAS_SIZE) {
+                        img.scaleToHeight(CANVAS_SIZE);
+                    }
+                    
+                    img.set({
+                        top: CANVAS_SIZE / 2,
+                        left: CANVAS_SIZE / 2,
+                        originX: 'center',
+                        originY: 'center',
+                        selectable: false, // Don't let the user move the background PFP
+                        evented: false,
+                        name: 'pfp_background'
+                    });
+
+                    // Add the image to the canvas at the back
+                    canvas.add(img);
+                    canvas.sendToBack(img);
+                    canvas.renderAll();
+
+                    // Add the cap/logo if not already present
+                    if (!canvas.getObjects().find(obj => obj.name === 'cap_group')) {
+                        addCapAndLogo();
+                    }
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function downloadImage() {
+            // Remove selection borders and controls for the final image
+            canvas.discardActiveObject();
+            canvas.renderAll();
+
+            // Generate the final image data URL
+            const dataURL = canvas.toDataURL({
+                format: 'png',
+                quality: 1.0,
+                width: CANVAS_SIZE,
+                height: CANVAS_SIZE
+            });
+
+            // Create a temporary link element to trigger the download
+            const link = document.createElement('a');
+            link.download = 'custom_pfp_cap.png';
+            link.href = dataURL;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- EVENT LISTENERS ---
+
+        document.getElementById('upload-pfp').addEventListener('change', handleImageUpload);
+        document.getElementById('download-btn').addEventListener('click', downloadImage);
+
+        // Initial setup for the canvas (optional background color)
+        canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
+        canvas.renderAll();
+
+    </script>
+
+</body>
+</html>
