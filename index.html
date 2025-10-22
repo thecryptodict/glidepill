@@ -69,10 +69,11 @@
 
         // --- IMAGE ASSETS (SVG Paths) ---
 
-        // The Bat Symbol (simple V-shape)
-        const batPath = 'M 0,0 L 50,50 L 100,0 L 75,0 L 50,25 L 25,0 Z'; 
+        // The Bat Symbol (New, complex path from user request)
+        // Fabric.js only uses the 'd' attribute for the path.
+        const batPath = 'M9.90672 16C12.1452 16 15.669 15.2444 18.0847 13.7556V6.8H10.1948V9.35556H15.4252V12C14.1398 12.9333 11.8792 13.4444 9.90672 13.4444C5.98392 13.4444 2.65952 11.2889 2.65952 8C2.65952 4.48889 5.98392 2.55556 9.90672 2.55556C11.7019 2.55556 14.4057 3 16.2231 4.62222V1.66667C14.583 0.6 12.0343 0 9.90672 0C4.16658 0 0 3.24444 0 8C0 12.7556 4.16658 16 9.90672 16ZM20.301 15.7778H33.5986V13.4444H22.9605V0.222222H20.301V15.7778ZM35.8149 15.7778H38.4744V0.222222H35.8149V15.7778ZM40.6907 15.7778H48.913C53.6559 15.7778 56.9803 13.7333 56.9803 8C56.9803 2.71111 53.6559 0.222222 48.913 0.222222H40.6907V15.7778ZM43.3502 2.77778H48.913C52.1045 2.77778 54.3207 4.15556 54.3207 8C54.3207 11.8444 52.1045 13.2222 48.913 13.2222H43.3502V2.77778ZM58.7754 15.7778H72.2947V13.2222H61.435V9.22222H71.8736V6.77778H61.435V2.77778H72.206V0.222222H58.7754V15.7778ZM74.4223 15.7778H77.0818V8.84444L87.055 15.7778H91.1994L81.2927 8.88889H84.5728C88.3626 8.88889 89.4707 6.93333 89.4707 4.55556C89.4707 2.17778 88.3626 0.222222 84.5728 0.222222H74.4223V15.7778ZM77.0818 6.33333V2.77778H84.4398C86.2572 2.77778 86.8112 3.62222 86.8112 4.55556C86.8112 5.6 86.2572 6.33333 84.4398 6.33333H77.0818ZM113.122 14H113.121C113.096 9.72419 109.668 6.26569 105.443 6.26569C103.698 6.26569 102.09 6.85501 100.801 7.84785C102.254 5.31115 104.445 3.26163 107.075 2C108.669 3.53927 110.826 4.48429 113.202 4.48429C115.575 4.48429 117.731 3.54093 119.325 2.00404C122.027 3.30226 124.264 5.43216 125.714 8.06745C124.382 6.94249 122.669 6.26568 120.8 6.26568C116.574 6.26568 113.146 9.72418 113.122 14Z';
 
-        // The Cap Shape (simple arc/hat shape)
+        // The Cap Shape (simple arc/hat shape - kept for simplicity)
         const capPath = 'M 0,50 C 0,0 100,0 100,50 L 80,50 L 80,60 L 20,60 L 20,50 Z'; 
 
         // --- FUNCTIONS ---
@@ -80,7 +81,7 @@
         function addCapAndLogo() {
             // 1. Add the Mint Green Cap
             const cap = new fabric.Path(capPath, {
-                fill: '#98FB98', // Mint Green
+                fill: '#98F7C6', // UPDATED: Mint Green color code
                 scaleX: 3,
                 scaleY: 2,
                 top: 100,
@@ -95,9 +96,9 @@
             // 2. Add the Black Bat Logo
             const logo = new fabric.Path(batPath, {
                 fill: 'black', 
-                scaleX: 1.5,
-                scaleY: 1.5,
-                top: 120, // Slightly lower than cap
+                scaleX: 2.5, // Increased scale to make the detailed logo more visible
+                scaleY: 2.5,
+                top: 110, // Adjusted vertical position
                 left: 150,
                 originX: 'center',
                 originY: 'center',
@@ -105,6 +106,15 @@
                 hasControls: true,
                 name: 'logo'
             });
+            
+            // Adjust the logo position relative to the cap (important for grouping)
+            logo.set({
+                top: cap.top + cap.getScaledHeight() * 0.1,
+                left: cap.left,
+                originX: 'center',
+                originY: 'center'
+            });
+
 
             // Group them so they move together initially
             const group = new fabric.Group([cap, logo], {
